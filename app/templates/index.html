@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ESP Hive Dashboard</title>
+<style>
+body{font-family:Arial;background:#111;color:white;}
+table{border-collapse:collapse;width:80%;margin:auto;}
+th,td{border:1px solid #444;padding:10px;text-align:center;}
+th{background:#222;}
+</style>
+</head>
+<body>
+<h2 style="text-align:center">ESP Node Dashboard</h2>
+<table>
+<tr>
+<th>Node</th>
+<th>IP</th>
+<th>Battery</th>
+<th>SOC</th>
+<th>Tracks</th>
+<th>Last Seen (s)</th>
+</tr>
+{% for n in nodes %}
+<tr>
+<td>{{n.id}}</td>
+<td>{{n.ip}}</td>
+<td>{{n.vbat}}</td>
+<td>{{n.soc}}</td>
+<td>{{n.tracks}}</td>
+<td>{{n.age}}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>

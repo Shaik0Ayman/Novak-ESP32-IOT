@@ -1,0 +1,33 @@
+[Unit]
+Description=ESP Hive Server - IoT Device Control Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/esp-hive-server
+
+# Start the application
+ExecStart=/usr/bin/python3 /home/pi/esp-hive-server/app/app.py
+
+# Restart policy
+Restart=always
+RestartSec=5
+StartLimitInterval=300
+StartLimitBurst=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+StandardInput=null
+
+# Environment
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
+# Keep service running
+KillMode=process
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
