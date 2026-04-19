@@ -2,34 +2,54 @@
 <html>
 <head>
 <title>ESP Hive Dashboard</title>
-<style>
-body{font-family:Arial;background:#111;color:white;}
-table{border-collapse:collapse;width:80%;margin:auto;}
-th,td{border:1px solid #444;padding:10px;text-align:center;}
-th{background:#222;}
-</style>
+    <meta http-equiv="refresh" content="10">
+    <style>
+        body{font-family:Arial;background:#111;color:white;padding:20px;}
+        h2{text-align:center;color:#4CAF50;}
+        table{border-collapse:collapse;width:90%;margin:auto;}
+        th,td{border:1px solid #444;padding:12px;text-align:center;}
+        th{background:#222;color:#4CAF50;}
+        tr:nth-child(even){background:#1a1a1a;}
+        .status{color:#4CAF50;font-weight:bold;}
+        .warning{color:#ff9800;}
+        .critical{color:#f44336;}
+    </style>
 </head>
 <body>
-<h2 style="text-align:center">ESP Node Dashboard</h2>
+<h2>🐝 ESP Hive Dashboard</h2>
+<p style="text-align:center;color:#888;">Auto-refreshes every 10 seconds</p>
 <table>
 <tr>
-<th>Node</th>
-<th>IP</th>
-<th>Battery</th>
-<th>SOC</th>
-<th>Tracks</th>
-<th>Last Seen (s)</th>
+    <th>Node ID</th>
+    <th>IP Address</th>
+    <th>Battery (V)</th>
+    <th>SOC (%)</th>
+    <th>Energy (Wh)</th>
+    <th>Tracks</th>
+    <th>Boot #</th>
+    <th>Last Seen</th>
 </tr>
 {% for n in nodes %}
 <tr>
-<td>{{n.id}}</td>
-<td>{{n.ip}}</td>
-<td>{{n.vbat}}</td>
-<td>{{n.soc}}</td>
-<td>{{n.tracks}}</td>
-<td>{{n.age}}</td>
+    <td><strong>{{n.id}}</strong></td>
+    <td>{{n.ip}}</td>
+    <td class="{% if n.vbat < 3.3 %}critical{% elif n.vbat < 3.6 %}warning{% else %}status{% endif %}">
+        {{"%.2f"|format(n.vbat) if n.vbat else "N/A"}}
+    </td>
+    <td class="{% if n.soc < 20 %}critical{% elif n.soc < 50 %}warning{% else %}status{% endif %}">
+        {{"%.1f"|format(n.soc) if n.soc else "N/A"}}
+    </td>
+    <td>{{"%.2f"|format(n.wh) if n.wh else "0.00"}}</td>
+    <td>{{n.tracks}}</td>
+    <td>{{n.boot}}</td>
+    <td class="{% if n.age > 300 %}critical{% elif n.age > 60 %}warning{% else %}status{% endif %}">
+        {{n.age}}s ago
+    </td>
 </tr>
 {% endfor %}
 </table>
+<p style="text-align:center;margin-top:20px;color:#666;">
+    Server running on port 5000 | TCP listener on port 5001
+</p>
 </body>
 </html>

@@ -11,6 +11,7 @@ from crypto import xor_decrypt
 TCP_HOST = "0.0.0.0"
 TCP_PORT = 5001
 WEB_PORT = 5000
+SOCKET_TIMEOUT = 10  # seconds
 
 # Get paths relative to project root
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,8 +56,12 @@ def ensure_files():
             json.dump({}, f)
 
 def handle_client(conn, addr):
+    """Handle ESP32 client connection with proper protocol"""
     ip = addr[0]
+    conn.settimeout(SOCKET_TIMEOUT)
+    
     try:
+        # Step 1: Receive config request from ESP32
         raw = recv_line(conn)
         if raw:
             try:
@@ -64,47 +69,65 @@ def handle_client(conn, addr):
                 if pkt.get("type") == "cfg":
                     interval = load_interval()
                     conn.sendall((json.dumps({"interval": interval}) + "\n").encode())
-            except:
+                    print(f"[CFG] Sent interval={interval} to {ip}")
+            except json.JSONDecodeError:
                 pass
 
+        # Step 2: Receive encrypted data from ESP32
         raw = recv_line(conn)
         if not raw:
+            print(f"[WARN] No data received from {ip}")
             return
 
         try:
+            # Decode base64, then XOR decrypt
             encrypted = base64.b64decode(raw.strip())
             plain = xor_decrypt(encrypted)
             pkt = json.loads(plain.decode())
+            
             ts = int(time.time())
 
+            # Send acknowledgment to ESP32
             conn.sendall(b'{"ack":1}\n')
+            print(f"[ACK] Sent to {pkt.get('id', 'unknown')}")
 
+            # Store in CSV
             with open(CSV_FILE, "a", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow([ts,pkt["id"],ip,pkt["tracks"],pkt["vbat"],pkt["soc"],pkt["boot"]])
+                writer.writerow([ts, pkt.get("id", "unknown"), ip, 
+                                pkt.get("tracks", 0), pkt.get("vbat", 0), 
+                                pkt.get("soc", 0), pkt.get("boot", 0)])
 
+            # Update registry
             with open(REGISTRY_FILE, "r") as f:
                 reg = json.load(f)
 
-            reg[pkt["id"]] = {
+            reg[pkt.get("id", "unknown")] = {
                 "ip": ip,
                 "last_seen": ts,
-                "tracks": pkt["tracks"],
-                "vbat": pkt["vbat"],
-                "soc": pkt["soc"],
-                "boot": pkt["boot"],
+                "tracks": pkt.get("tracks", 0),
+                "vbat": pkt.get("vbat", 0),
+                "soc": pkt.get("soc", 0),
+                "boot": pkt.get("boot", 0),
+                "wh": pkt.get("wh", 0),  # Include energy in Wh
             }
 
             with open(REGISTRY_FILE, "w") as f:
                 json.dump(reg, f, indent=2)
 
-            print(f"[DATA] {pkt['id']} | V={pkt['vbat']} | SOC={pkt['soc']} | tracks={pkt['tracks']}")
+            print(f"[DATA] {pkt.get('id')} | V={pkt.get('vbat')}V | SOC={pkt.get('soc')}% | tracks={pkt.get('tracks')} | boot={pkt.get('boot')}")
 
+        except base64.b64decode.Error as e:
+            print(f"[ERROR] Base64 decode failed from {ip}: {e}")
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] JSON parse failed from {ip}: {e}")
         except Exception as e:
-            print("[WARN] bad packet", e)
+            print(f"[WARN] Bad packet from {ip}: {e}")
 
+    except socket.timeout:
+        print(f"[WARN] Connection timeout from {ip}")
     except Exception as e:
-        print("[ERROR] client handling", e)
+        print(f"[ERROR] Client handling {ip}: {e}")
     finally:
         conn.close()
 
