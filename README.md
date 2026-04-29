@@ -1,6 +1,6 @@
-# ESP Hive Server 🐝
+# ESP Hive Server 
 
-A production-ready IoT control server for managing ESP32-based hive monitoring nodes on Raspberry Pi.
+A IoT control server for managing ESP32-based hive monitoring nodes on Raspberry Pi.
 
 ## Quick Start (5 Minutes)
 
@@ -29,7 +29,6 @@ Verify auto-start configuration:
 
 Open browser: `http://raspi.local:5000`
 
-That's it! 🚀
 
 ---
 
@@ -460,4 +459,3 @@ MIT License - See LICENSE file
 
 ---
 
-**Built for the swarm 🐝**
